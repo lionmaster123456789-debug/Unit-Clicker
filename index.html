@@ -2,188 +2,204 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Neon Merge Clicker</title>
+    <title>Terra Crystal Clicker</title>
     <style>
-        :root { --neon: #00f2ff; --bg: #0a0a0a; --panel: #151515; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+        :root { --neon: #00f2ff; --gold: #f1c40f; }
+        body { background: #050505; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        #header { text-align: center; padding: 20px; }
-        #money-display { font-size: 40px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
-        #gps-display { color: var(--neon); font-size: 18px; }
+        /* Linke Seite: Die Erde */
+        #world-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #001a33 0%, #000 100%); border-right: 2px solid #222; }
+        #earth { width: 250px; height: 250px; border-radius: 50%; background: url('https://img.freepik.com') center/cover; background-color: #2980b9; box-shadow: 0 0 50px #2980b9, inset 0 0 50px rgba(0,0,0,0.8); cursor: pointer; transition: transform 0.1s; position: relative; border: 4px solid #1a1a1a; }
+        #earth:active { transform: scale(0.95); }
+        .world-stat { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: var(--gold); }
 
-        #main-container { display: flex; gap: 20px; padding: 20px; width: 95vw; height: 70vh; }
+        /* Mitte: Merge-Feld */
+        #merge-section { flex: 1.5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        #grid { display: grid; grid-template-columns: repeat(4, 80px); grid-template-rows: repeat(4, 80px); gap: 10px; background: #111; padding: 15px; border-radius: 15px; border: 2px solid #333; }
+        .slot { width: 80px; height: 80px; background: #0a0a0a; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .crystal { width: 60%; height: 60%; transform: rotate(45deg); box-shadow: 0 0 15px currentColor; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: white; }
+        .crystal span { transform: rotate(-45deg); }
 
-        /* Klick-Bereich */
-        #click-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel); border-radius: 20px; border: 2px solid #333; }
-        #big-button { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, var(--neon), #0066ff); border: none; cursor: pointer; box-shadow: 0 0 30px var(--neon); transition: transform 0.1s; position: relative; }
-        #big-button:active { transform: scale(0.9); }
+        /* Rechts: Upgrades */
+        #upgrade-section { flex: 1.2; background: #0f0f0f; border-left: 2px solid #222; padding: 20px; overflow-y: auto; }
+        .upgrade-card { background: #1a1a1a; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .upgrade-card:hover { border-color: var(--neon); background: #222; }
+        .upgrade-card.locked { opacity: 0.4; cursor: not-allowed; }
+        .upgrade-card h4 { margin: 0; color: var(--neon); }
+        .upgrade-card p { margin: 5px 0; font-size: 12px; color: #aaa; }
+        .price { color: var(--gold); font-weight: bold; }
 
-        /* Merge-Feld */
-        #merge-grid { flex: 2; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; background: var(--panel); padding: 20px; border-radius: 20px; border: 2px solid #333; }
-        .slot { background: #222; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px dashed #444; }
-        .unit { width: 80%; height: 80%; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: grab; font-size: 24px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-
-        /* Upgrades */
-        #upgrade-panel { flex: 1; background: var(--panel); padding: 20px; border-radius: 20px; border: 2px solid #333; overflow-y: auto; }
-        .upgrade-btn { width: 100%; padding: 15px; margin-bottom: 10px; background: #222; border: 1px solid var(--neon); color: white; cursor: pointer; text-align: left; border-radius: 8px; }
-        .upgrade-btn:hover:not(:disabled) { background: #333; }
-        .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555; }
-        
-        .floating-text { position: absolute; color: #f1c40f; font-weight: bold; pointer-events: none; animation: floatUp 0.8s forwards; }
-        @keyframes floatUp { to { transform: translateY(-50px); opacity: 0; } }
+        .floating-text { position: absolute; pointer-events: none; animation: floatUp 1s forwards; font-weight: bold; }
+        @keyframes floatUp { to { transform: translateY(-100px); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <div id="money-display">0 🪙</div>
-        <div id="gps-display">Gold pro Sekunde: 0</div>
+    <div id="world-section">
+        <div class="world-stat" id="money-display">0 🪙</div>
+        <div id="gps-display" style="color: #00f2ff; margin-bottom: 20px;">GPS: 0</div>
+        <div id="earth" onclick="clickEarth(event)"></div>
+        <h2 id="world-name">Öde Erde</h2>
+        <p id="click-val" style="color: #666;">Pro Klick: +1</p>
     </div>
 
-    <div id="main-container">
-        <!-- Klicker -->
-        <div id="click-section">
-            <button id="big-button" onclick="clickMoney(event)"></button>
-            <p>KLICK MICH!</p>
-        </div>
+    <div id="merge-section">
+        <h3>Kristall-Hangar</h3>
+        <div id="grid"></div>
+        <button onclick="buyCrystal()" id="buy-btn" style="margin-top: 20px; padding: 15px 30px; background: var(--neon); border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Kristall kaufen (<span id="buy-price">10</span> 🪙)</button>
+    </div>
 
-        <!-- Merge Grid -->
-        <div id="merge-grid">
-            <!-- 16 Slots werden per JS generiert -->
-        </div>
-
-        <!-- Upgrades -->
-        <div id="upgrade-panel">
-            <h3>Upgrades</h3>
-            <button class="upgrade-btn" id="buy-unit-btn" onclick="buyUnit()">
-                Neue Unit kaufen<br><span id="unit-cost">Kosten: 10 🪙</span>
-            </button>
-            <button class="upgrade-btn" id="click-power-btn" onclick="upgradeClick()">
-                Klick-Power verbessern<br><span id="click-cost">Kosten: 50 🪙</span>
-            </button>
-        </div>
+    <div id="upgrade-section">
+        <h3>Welt-Upgrades</h3>
+        <div id="upgrade-list"></div>
     </div>
 
 <script>
     let money = 0;
+    let gps = 0;
     let clickPower = 1;
-    let unitCost = 10;
-    let clickUpgradeCost = 50;
+    let crystalBasePrice = 10;
+    let crystalCount = 0;
     let grid = Array(16).fill(null);
+    let selectedIdx = null;
 
-    // Unit-Definitionen (Level: {Name, Farbe, GPS})
-    const unitTypes = {
-        1: { char: '⚡', color: '#7f8c8d', gps: 1 },
-        2: { char: '🔥', color: '#e67e22', gps: 5 },
-        3: { char: '💧', color: '#3498db', gps: 20 },
-        4: { char: '☘️', color: '#2ecc71', gps: 100 },
-        5: { char: '💎', color: '#9b59b6', gps: 500 },
-        6: { char: '👑', color: '#f1c40f', gps: 2500 }
-    };
+    // Upgrades System (30+ geplant, hier die Logik)
+    const upgrades = [
+        { id: 'forest', name: 'Wälder pflanzen', desc: 'Erhöht Klick-Power um +2', cost: 50, growth: 1.5, type: 'click', power: 2 },
+        { id: 'ocean', name: 'Ozeane füllen', desc: 'Alle Kristalle produzieren +10% mehr', cost: 200, growth: 1.6, type: 'mult', power: 1.1 },
+        { id: 'atmo', name: 'Atmosphäre', desc: 'Halbiert die Preissteigerung von Kristallen', cost: 1000, growth: 2.5, type: 'discount', power: 0.9 },
+        { id: 'tectonic', name: 'Plattentektonik', desc: 'GPS +50', cost: 5000, growth: 1.4, type: 'gps', power: 50 },
+        { id: 'life', name: 'Erstes Leben', desc: 'Verdreifacht Klick-Power', cost: 15000, growth: 3, type: 'click_mult', power: 3 },
+        { id: 'core', name: 'Erdkern-Erhitzung', desc: 'Kristalle spawnen auf Level 2', cost: 50000, growth: 5, type: 'spawn_lvl', power: 1 }
+    ];
+    let activeUpgrades = {};
+
+    // Kristall-Generator (Generiert Farben für 50+ Stufen)
+    function getCrystalStyle(lvl) {
+        const hue = (lvl * 45) % 360;
+        return `background: hsl(${hue}, 70%, 50%); color: hsl(${hue}, 70%, 20%); box-shadow: 0 0 15px hsl(${hue}, 70%, 50%);`;
+    }
+
+    function getCrystalGPS(lvl) {
+        return Math.pow(4, lvl - 1);
+    }
 
     function initGrid() {
-        const gridEl = document.getElementById('merge-grid');
+        const gridEl = document.getElementById('grid');
         gridEl.innerHTML = '';
-        for (let i = 0; i < 16; i++) {
+        grid.forEach((val, i) => {
             const slot = document.createElement('div');
             slot.className = 'slot';
-            slot.dataset.index = i;
-            slot.onclick = () => handleSlotClick(i);
-            if (grid[i]) {
-                const unit = document.createElement('div');
-                unit.className = 'unit';
-                unit.style.backgroundColor = unitTypes[grid[i]].color;
-                unit.innerText = unitTypes[grid[i]].char;
-                slot.appendChild(unit);
+            if (i === selectedIdx) slot.style.borderColor = 'white';
+            
+            if (val) {
+                const cry = document.createElement('div');
+                cry.className = 'crystal';
+                cry.setAttribute('style', getCrystalStyle(val));
+                cry.innerHTML = `<span>Lvl ${val}</span>`;
+                slot.appendChild(cry);
             }
+            slot.onclick = () => handleSlotClick(i);
             gridEl.appendChild(slot);
+        });
+    }
+
+    function handleSlotClick(i) {
+        if (selectedIdx === null) {
+            if (grid[i]) selectedIdx = i;
+        } else {
+            if (selectedIdx !== i && grid[selectedIdx] === grid[i] && grid[i] < 50) {
+                grid[i]++;
+                grid[selectedIdx] = null;
+            } else if (selectedIdx !== i) {
+                [grid[i], grid[selectedIdx]] = [grid[selectedIdx], grid[i]];
+            }
+            selectedIdx = null;
+        }
+        initGrid();
+    }
+
+    function buyCrystal() {
+        let price = Math.floor(crystalBasePrice * Math.pow(1.15, crystalCount));
+        let empty = grid.indexOf(null);
+        if (money >= price && empty !== -1) {
+            money -= price;
+            grid[empty] = activeUpgrades['core'] ? 2 : 1;
+            crystalCount++;
+            initGrid();
+            updateUI();
         }
     }
 
-    function clickMoney(e) {
+    function clickEarth(e) {
         money += clickPower;
-        spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`);
+        const text = document.createElement('div');
+        text.className = 'floating-text';
+        text.style.left = e.clientX + 'px';
+        text.style.top = e.clientY + 'px';
+        text.style.color = 'white';
+        text.innerText = `+${clickPower}`;
+        document.body.appendChild(text);
+        setTimeout(() => text.remove(), 1000);
         updateUI();
     }
 
-    function spawnFloatingText(x, y, text) {
-        const span = document.createElement('span');
-        span.className = 'floating-text';
-        span.style.left = x + 'px';
-        span.style.top = y + 'px';
-        span.innerText = text;
-        document.body.appendChild(span);
-        setTimeout(() => span.remove(), 800);
-    }
-
-    let selectedSlot = null;
-
-    function handleSlotClick(index) {
-        if (selectedSlot === null) {
-            if (grid[index]) {
-                selectedSlot = index;
-                document.querySelectorAll('.slot')[index].style.borderColor = 'white';
-            }
-        } else {
-            if (selectedSlot === index) {
-                // Deselektieren
-            } else if (grid[index] === grid[selectedSlot] && grid[index] < 6) {
-                // Merge!
-                grid[index]++;
-                grid[selectedSlot] = null;
-            } else {
-                // Tauschen
-                let temp = grid[index];
-                grid[index] = grid[selectedSlot];
-                grid[selectedSlot] = temp;
-            }
-            selectedSlot = null;
-            initGrid();
-        }
-    }
-
-    function buyUnit() {
-        let emptySlot = grid.indexOf(null);
-        if (money >= unitCost && emptySlot !== -1) {
-            money -= unitCost;
-            grid[emptySlot] = 1;
-            unitCost = Math.floor(unitCost * 1.2);
-            initGrid();
-            updateUI();
-        }
-    }
-
-    function upgradeClick() {
-        if (money >= clickUpgradeCost) {
-            money -= clickUpgradeCost;
-            clickPower *= 2;
-            clickUpgradeCost *= 3;
-            updateUI();
-        }
-    }
-
-    function calculateGPS() {
-        return grid.reduce((acc, level) => acc + (level ? unitTypes[level].gps : 0), 0);
-    }
-
     function updateUI() {
-        document.getElementById('money-display').innerText = Math.floor(money) + " 🪙";
-        document.getElementById('gps-display').innerText = "Gold pro Sekunde: " + calculateGPS();
-        document.getElementById('unit-cost').innerText = `Kosten: ${unitCost} 🪙`;
-        document.getElementById('click-cost').innerText = `Kosten: ${clickUpgradeCost} 🪙`;
+        document.getElementById('money-display').innerText = Math.floor(money).toLocaleString() + " 🪙";
+        document.getElementById('gps-display').innerText = "Produktion: " + gps.toLocaleString() + " /s";
+        let nextPrice = Math.floor(crystalBasePrice * Math.pow(1.15, crystalCount));
+        document.getElementById('buy-price').innerText = nextPrice.toLocaleString();
+        document.getElementById('click-val').innerText = `Pro Klick: +${clickPower}`;
         
-        document.getElementById('buy-unit-btn').disabled = money < unitCost || grid.indexOf(null) === -1;
-        document.getElementById('click-power-btn').disabled = money < clickUpgradeCost;
+        // Upgrades rendern
+        const list = document.getElementById('upgrade-list');
+        list.innerHTML = '';
+        upgrades.forEach(up => {
+            const count = activeUpgrades[up.id] || 0;
+            const currentCost = Math.floor(up.cost * Math.pow(up.growth, count));
+            const card = document.createElement('div');
+            card.className = `upgrade-card ${money < currentCost ? 'locked' : ''}`;
+            card.innerHTML = `
+                <h4>${up.name} (Lv. ${count})</h4>
+                <p>${up.desc}</p>
+                <div class="price">Preis: ${currentCost.toLocaleString()} 🪙</div>
+            `;
+            card.onclick = () => buyUpgrade(up, currentCost);
+            list.appendChild(card);
+        });
     }
 
-    // Game Loop für GPS
+    function buyUpgrade(up, cost) {
+        if (money >= cost) {
+            money -= cost;
+            activeUpgrades[up.id] = (activeUpgrades[up.id] || 0) + 1;
+            
+            // Logik der Upgrades
+            if (up.type === 'click') clickPower += up.power;
+            if (up.type === 'gps') gps += up.power;
+            if (up.type === 'click_mult') clickPower *= up.power;
+            if (up.type === 'discount') crystalBasePrice *= up.power;
+            
+            updateUI();
+        }
+    }
+
+    // Game Loop
     setInterval(() => {
-        money += calculateGPS() / 10;
+        let currentGps = 0;
+        grid.forEach(val => {
+            if (val) currentGps += getCrystalGPS(val);
+        });
+        
+        // Multiplikator Upgrades anwenden
+        if (activeUpgrades['ocean']) currentGps *= (1 + (activeUpgrades['ocean'] * 0.1));
+        
+        gps = Math.floor(currentGps);
+        money += gps / 10;
         updateUI();
     }, 100);
 
     initGrid();
-    updateUI();
 </script>
 </body>
 </html>
