@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Merge Clicker</title>
+    <style>
+        :root { --neon: #00f2ff; --bg: #0a0a0a; --panel: #151515; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; }
+        
+        #header { text-align: center; padding: 20px; }
+        #money-display { font-size: 40px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        #gps-display { color: var(--neon); font-size: 18px; }
+
+        #main-container { display: flex; gap: 20px; padding: 20px; width: 95vw; height: 70vh; }
+
+        /* Klick-Bereich */
+        #click-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--panel); border-radius: 20px; border: 2px solid #333; }
+        #big-button { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, var(--neon), #0066ff); border: none; cursor: pointer; box-shadow: 0 0 30px var(--neon); transition: transform 0.1s; position: relative; }
+        #big-button:active { transform: scale(0.9); }
+
+        /* Merge-Feld */
+        #merge-grid { flex: 2; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; background: var(--panel); padding: 20px; border-radius: 20px; border: 2px solid #333; }
+        .slot { background: #222; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px dashed #444; }
+        .unit { width: 80%; height: 80%; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: grab; font-size: 24px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+
+        /* Upgrades */
+        #upgrade-panel { flex: 1; background: var(--panel); padding: 20px; border-radius: 20px; border: 2px solid #333; overflow-y: auto; }
+        .upgrade-btn { width: 100%; padding: 15px; margin-bottom: 10px; background: #222; border: 1px solid var(--neon); color: white; cursor: pointer; text-align: left; border-radius: 8px; }
+        .upgrade-btn:hover:not(:disabled) { background: #333; }
+        .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #555; }
+        
+        .floating-text { position: absolute; color: #f1c40f; font-weight: bold; pointer-events: none; animation: floatUp 0.8s forwards; }
+        @keyframes floatUp { to { transform: translateY(-50px); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <div id="money-display">0 🪙</div>
+        <div id="gps-display">Gold pro Sekunde: 0</div>
+    </div>
+
+    <div id="main-container">
+        <!-- Klicker -->
+        <div id="click-section">
+            <button id="big-button" onclick="clickMoney(event)"></button>
+            <p>KLICK MICH!</p>
+        </div>
+
+        <!-- Merge Grid -->
+        <div id="merge-grid">
+            <!-- 16 Slots werden per JS generiert -->
+        </div>
+
+        <!-- Upgrades -->
+        <div id="upgrade-panel">
+            <h3>Upgrades</h3>
+            <button class="upgrade-btn" id="buy-unit-btn" onclick="buyUnit()">
+                Neue Unit kaufen<br><span id="unit-cost">Kosten: 10 🪙</span>
+            </button>
+            <button class="upgrade-btn" id="click-power-btn" onclick="upgradeClick()">
+                Klick-Power verbessern<br><span id="click-cost">Kosten: 50 🪙</span>
+            </button>
+        </div>
+    </div>
+
+<script>
+    let money = 0;
+    let clickPower = 1;
+    let unitCost = 10;
+    let clickUpgradeCost = 50;
+    let grid = Array(16).fill(null);
+
+    // Unit-Definitionen (Level: {Name, Farbe, GPS})
+    const unitTypes = {
+        1: { char: '⚡', color: '#7f8c8d', gps: 1 },
+        2: { char: '🔥', color: '#e67e22', gps: 5 },
+        3: { char: '💧', color: '#3498db', gps: 20 },
+        4: { char: '☘️', color: '#2ecc71', gps: 100 },
+        5: { char: '💎', color: '#9b59b6', gps: 500 },
+        6: { char: '👑', color: '#f1c40f', gps: 2500 }
+    };
+
+    function initGrid() {
+        const gridEl = document.getElementById('merge-grid');
+        gridEl.innerHTML = '';
+        for (let i = 0; i < 16; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.dataset.index = i;
+            slot.onclick = () => handleSlotClick(i);
+            if (grid[i]) {
+                const unit = document.createElement('div');
+                unit.className = 'unit';
+                unit.style.backgroundColor = unitTypes[grid[i]].color;
+                unit.innerText = unitTypes[grid[i]].char;
+                slot.appendChild(unit);
+            }
+            gridEl.appendChild(slot);
+        }
+    }
+
+    function clickMoney(e) {
+        money += clickPower;
+        spawnFloatingText(e.clientX, e.clientY, `+${clickPower}`);
+        updateUI();
+    }
+
+    function spawnFloatingText(x, y, text) {
+        const span = document.createElement('span');
+        span.className = 'floating-text';
+        span.style.left = x + 'px';
+        span.style.top = y + 'px';
+        span.innerText = text;
+        document.body.appendChild(span);
+        setTimeout(() => span.remove(), 800);
+    }
+
+    let selectedSlot = null;
+
+    function handleSlotClick(index) {
+        if (selectedSlot === null) {
+            if (grid[index]) {
+                selectedSlot = index;
+                document.querySelectorAll('.slot')[index].style.borderColor = 'white';
+            }
+        } else {
+            if (selectedSlot === index) {
+                // Deselektieren
+            } else if (grid[index] === grid[selectedSlot] && grid[index] < 6) {
+                // Merge!
+                grid[index]++;
+                grid[selectedSlot] = null;
+            } else {
+                // Tauschen
+                let temp = grid[index];
+                grid[index] = grid[selectedSlot];
+                grid[selectedSlot] = temp;
+            }
+            selectedSlot = null;
+            initGrid();
+        }
+    }
+
+    function buyUnit() {
+        let emptySlot = grid.indexOf(null);
+        if (money >= unitCost && emptySlot !== -1) {
+            money -= unitCost;
+            grid[emptySlot] = 1;
+            unitCost = Math.floor(unitCost * 1.2);
+            initGrid();
+            updateUI();
+        }
+    }
+
+    function upgradeClick() {
+        if (money >= clickUpgradeCost) {
+            money -= clickUpgradeCost;
+            clickPower *= 2;
+            clickUpgradeCost *= 3;
+            updateUI();
+        }
+    }
+
+    function calculateGPS() {
+        return grid.reduce((acc, level) => acc + (level ? unitTypes[level].gps : 0), 0);
+    }
+
+    function updateUI() {
+        document.getElementById('money-display').innerText = Math.floor(money) + " 🪙";
+        document.getElementById('gps-display').innerText = "Gold pro Sekunde: " + calculateGPS();
+        document.getElementById('unit-cost').innerText = `Kosten: ${unitCost} 🪙`;
+        document.getElementById('click-cost').innerText = `Kosten: ${clickUpgradeCost} 🪙`;
+        
+        document.getElementById('buy-unit-btn').disabled = money < unitCost || grid.indexOf(null) === -1;
+        document.getElementById('click-power-btn').disabled = money < clickUpgradeCost;
+    }
+
+    // Game Loop für GPS
+    setInterval(() => {
+        money += calculateGPS() / 10;
+        updateUI();
+    }, 100);
+
+    initGrid();
+    updateUI();
+</script>
+</body>
+</html>
